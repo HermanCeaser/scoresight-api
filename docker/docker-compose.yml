@@ -1,0 +1,29 @@
+services:
+  # postgres:
+  #   image: postgres:15
+  #   container_name: scoresight-postgres
+  #   environment:
+  #     POSTGRES_USER: scoreadmin
+  #     POSTGRES_PASSWORD: scorepass
+  #     POSTGRES_DB: scoresight
+  #   ports:
+  #     - '5432:5432'
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   networks:
+  #     - scoresight-net
+
+  redis:
+    image: redis:7
+    container_name: scoresight-redis
+    ports:
+      - '6379:6379'
+    networks:
+      - scoresight-net
+
+# volumes:
+#   pgdata:
+
+networks:
+  scoresight-net:
+    driver: bridge

@@ -1,0 +1,42 @@
+# Core FastAPI and ASGI server
+fastapi==0.115.12
+uvicorn==0.34.3
+
+# Database and ORM
+sqlalchemy==2.0.41
+alembic==1.16.1
+# MySQL connector for production RDS
+PyMySQL==1.1.1
+cryptography==44.0.1  # Required for PyMySQL with SSL
+
+# Pydantic for data validation and settings
+pydantic==2.11.5
+pydantic-settings==2.9.1
+
+# Background task processing
+celery==5.4.0
+redis==5.3.0
+flower==3.1.0  # Celery monitoring tool
+
+# HTTP client for OpenAI API calls
+httpx==0.28.1
+
+# PDF processing
+PyMuPDF==1.26.0
+
+# Image processing
+Pillow==11.2.1
+
+# Data processing and Excel/CSV handling
+pandas==2.2.3
+openpyxl==3.1.5  # Required for Excel file operations
+xlsxwriter==3.2.0  # Alternative Excel writer
+
+# File upload handling
+python-multipart==0.0.20
+
+# Environment variable management
+python-dotenv==1.1.0
+
+# Essential Python packages
+typing-extensions==4.13.2
