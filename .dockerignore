@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+# Don't ignore .env files - they're needed for Docker
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+database/
+uploads/
+reports/
+logs/
+*.log
+.coverage
+htmlcov/
+
+# Development files (only exclude from production builds)
+# dev-requirements.txt  # Commented out - needed for dev builds
+Makefile
+README.md
+*.md
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Utils and scripts (not needed in production)
+utils/
+scripts/
+tests/

@@ -1,0 +1,39 @@
+# Development override for docker-compose.yml
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  scoresight-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/venv  # Exclude venv from bind mount
+    env_file:
+      - .env
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+    command: python app.py
+
+  scoresight-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - .:/app
+      - /app/venv  # Exclude venv from bind mount
+    env_file:
+      - .env
+    environment:
+      - DEBUG=true
+      - ENVIRONMENT=development
+
+  scoresight-flower:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    env_file:
+      - .env
+    command: celery -A app.celery_app flower --port=5555
+    # Remove basic auth for development

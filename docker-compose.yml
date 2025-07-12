@@ -1,0 +1,81 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: scoresight-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - scoresight-net
+
+  scoresight-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: scoresight-api
+    ports:
+      - '8001:8001'
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+      - ./database:/app/database
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - scoresight-net
+
+  scoresight-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: scoresight-worker
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+      - ./database:/app/database
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - scoresight-net
+
+  scoresight-flower:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: scoresight-flower
+    command: celery -A app.celery_app flower --port=5555 --basic_auth=admin:admin123
+    ports:
+      - '5555:5555'
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - scoresight-net
+
+volumes:
+  redis_data:
+
+networks:
+  scoresight-net:
+    driver: bridge

@@ -1,15 +1,126 @@
-.PHONY: dev db run celery lint test cov db-init db-migrate db-upgrade db-downgrade install
+.PHONY: dev db run celery lint test cov db-init db-migrate db-upgrade db-downgrade install setup-dev setup-prod docker-build docker-up docker-down docker-logs help
 
-# Install dependencies
+# Default target
+.DEFAULT_GOAL := help
+
+# =============================================================================
+# Help
+# =============================================================================
+
+help: ## Show this help message
+	@echo "ScoreSight Development Commands"
+	@echo "==============================="
+	@echo
+	@echo "Environment Setup:"
+	@echo "  setup-dev     Setup development environment with dev dependencies"
+	@echo "  setup-prod    Setup production environment with production dependencies"
+	@echo
+	@echo "Docker Commands:"
+	@echo "  docker-build  Build Docker images"
+	@echo "  docker-up     Start all services with Docker (production)"
+	@echo "  docker-dev    Start development environment with Docker"
+	@echo "  docker-down   Stop all Docker services"
+	@echo "  docker-restart Restart Docker services"
+	@echo "  docker-logs   View Docker logs"
+	@echo "  docker-clean  Clean Docker resources"
+	@echo
+	@echo "Environment Files:"
+	@echo "  .env          Main environment variables (local development)"
+	@echo "  .env.docker   Docker production overrides"
+	@echo "  .env.dev      Docker development overrides"
+	@echo "  .env.production Production template"
+	@echo
+	@echo "Local Development:"
+	@echo "  dev-full      Start Redis + Celery + Flower + FastAPI"
+	@echo "  dev-monitor   Start Celery + Flower in foreground"
+	@echo "  run           Start only FastAPI server"
+	@echo "  celery        Start only Celery worker"
+	@echo "  celery-monitor Start Celery with Flower monitoring"
+	@echo
+	@echo "Database:"
+	@echo "  db-init       Initialize database"
+	@echo "  db-migrate    Create new migration"
+	@echo "  db-upgrade    Apply migrations"
+	@echo "  db-downgrade  Rollback migration"
+	@echo
+	@echo "Testing & Quality:"
+	@echo "  test          Run all tests"
+	@echo "  test-api      Run API tests only"
+	@echo "  lint          Lint and format code"
+	@echo "  cov           Generate coverage report"
+	@echo
+
+# =============================================================================
+# Environment Setup
+# =============================================================================
+
+# Setup development environment
+setup-dev:
+	@echo "Setting up development environment..."
+	@./scripts/setup_env.sh dev
+
+# Setup production environment
+setup-prod:
+	@echo "Setting up production environment..."
+	@./scripts/setup_env.sh prod
+
+# Install dependencies (legacy - use setup-dev or setup-prod instead)
 install:
 	@echo "Installing dependencies..."
 	@pip install -r requirements.txt
 
+# =============================================================================
+# Docker Commands
+# =============================================================================
+
+# Build Docker images
+docker-build:
+	@echo "Building Docker images..."
+	@docker compose build
+
+# Start all services with Docker
+docker-up:
+	@echo "Starting all services with Docker..."
+	@docker compose up -d
+	@echo "Services started:"
+	@echo "  • API:    http://localhost:8001"
+	@echo "  • Flower: http://localhost:5555 (admin:admin123)"
+	@echo "  • Redis:  localhost:6379"
+
+# Start development with Docker
+docker-dev:
+	@echo "Starting development with Docker..."
+	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# Stop all Docker services
+docker-down:
+	@echo "Stopping all Docker services..."
+	@docker compose down
+
+# View Docker logs
+docker-logs:
+	@echo "Viewing Docker logs..."
+	@docker compose logs -f
+
+# Restart Docker services
+docker-restart: docker-down docker-up
+
+# Clean Docker resources
+docker-clean:
+	@echo "Cleaning Docker resources..."
+	@docker compose down -v --rmi all
+	@docker system prune -f
+
+# =============================================================================
+# Local Development
+# =============================================================================
+
 # Development environment setup
-dev: db-init
+dev: 
 	@echo "Starting development environment..."
 	@echo "Use 'make run' in one terminal and 'make celery' in another"
 	@echo "Or use 'make dev-full' to start everything with monitoring"
+	@echo "Or use 'make docker-dev' for Docker development"
 
 # Start full development environment (Redis + FastAPI + Celery + Flower)
 dev-full: db-init
@@ -19,12 +130,18 @@ dev-full: db-init
 	@sleep 2
 	@echo "2. Starting Celery worker in background..."
 	@celery -A app.celery_app worker --loglevel=info --concurrency=2 --detach
-	@echo "3. Starting Flower monitoring..."
-	@echo "   Flower will be available at http://localhost:5555"
-	@celery -A app.celery_app flower --port=5555 --detach
-	@echo "4. Starting FastAPI server..."
+	
+	@echo "3. Starting FastAPI server..."
 	@echo "   API will be available at http://localhost:8001"
 	@python app.py
+	@echo "4. Starting Flower monitoring..."
+	@echo "   Flower will be available at http://localhost:5555"
+	@celery -A app.celery_app flower --port=5555 --detach
+
+# Start development with Docker
+docker-dev:
+	@echo "Starting development with Docker..."
+	@docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Start development with monitoring (Celery + Flower in foreground for debugging)
 dev-monitor: db-init
@@ -35,25 +152,29 @@ dev-monitor: db-init
 	@echo "Press Ctrl+C to stop both worker and monitoring"
 	@make celery-full
 
+# =============================================================================
+# Database Commands
+# =============================================================================
+
 # Initialize database
 db-init:
 	@echo "Initializing database..."
-	@cd scoresight && alembic upgrade head
+	@alembic upgrade head
 
 # Create new migration
 db-migrate:
 	@echo "Creating new migration..."
-	@cd scoresight && alembic revision --autogenerate -m "$(msg)"
+	@alembic revision --autogenerate -m "$(msg)"
 
 # Apply migrations
 db-upgrade:
 	@echo "Applying database migrations..."
-	@cd scoresight && alembic upgrade head
+	@alembic upgrade head
 
 # Rollback migrations
 db-downgrade:
 	@echo "Rolling back database migration..."
-	@cd scoresight && alembic downgrade -1
+	@alembic downgrade -1
 
 # Spin up Redis via Docker Compose
 db:
